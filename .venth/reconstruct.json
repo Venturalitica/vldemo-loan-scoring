@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "kind": "reconstruct",
+  "system": "pilot-loan-scoring",
+  "payload": {
+    "system_name": "pilot-loan-scoring",
+    "snapshots": [
+      {
+        "sha": "e60dee3dbf7ba2c2ae06e5fe39ca2ab4b07ba674",
+        "date": "2025-10-12T07:58:48+00:00",
+        "subject": "run: V1 evidencia (gate puede ser RED; seed=42)"
+      },
+      {
+        "sha": "b862a0f7f3a49859227a6f806109a1b7de8b27d2",
+        "date": "2025-10-12T07:58:48+00:00",
+        "subject": "run: V2 evidencia (gate GREEN esperado; seed=42)"
+      }
+    ],
+    "risks": [
+      {
+        "risk_id": "risk.unfair-credit-exclusion",
+        "identified_sha": "977106f2f4e676686954fd11aac05c8b7ccbd6a9",
+        "identified_date": "2025-10-12T07:58:48Z",
+        "provenance": "declared",
+        "assessment": {
+          "risk_id": "risk.unfair-credit-exclusion",
+          "kind": "threat",
+          "provenance": "declared",
+          "likelihood": "LIKELY",
+          "residual_declared_likelihood": "UNLIKELY",
+          "dimensions": [
+            {
+              "dimension": "individual",
+              "impact": "HIGH",
+              "appetite": "MEDIUM",
+              "inherent_level": "HIGH",
+              "inherent_eval": "exceeds",
+              "residual_level": "MEDIUM",
+              "residual_eval": "within"
+            },
+            {
+              "dimension": "society",
+              "impact": "HIGH",
+              "appetite": "MEDIUM",
+              "inherent_level": "HIGH",
+              "inherent_eval": "exceeds",
+              "residual_level": "MEDIUM",
+              "residual_eval": "within"
+            },
+            {
+              "dimension": "organization",
+              "impact": "HIGH",
+              "appetite": "HIGH",
+              "inherent_level": "HIGH",
+              "inherent_eval": "within",
+              "residual_level": "MEDIUM",
+              "residual_eval": "within"
+            }
+          ],
+          "inherent_overall": "HIGH",
+          "residual_overall": "MEDIUM",
+          "requires_treatment": true,
+          "control_confirmed": true,
+          "cycle": {
+            "status": "closed"
+          },
+          "priority": 5
+        }
+      }
+    ],
+    "approval": null,
+    "lifecycle": {
+      "state": "draft"
+    }
+  }
+}
