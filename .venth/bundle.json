@@ -29,7 +29,7 @@
     "organization": "Example Loan Corp"
   },
   "triple": {
-    "code": "977106f2f4e676686954fd11aac05c8b7ccbd6a9",
+    "code": "4b043a1234b007b56a1bcb158a3b781f07443e8a",
     "model": "logreg:seed=42",
     "dataset": ""
   },
@@ -91,7 +91,7 @@
     {
       "control_id": "unfair-credit-exclusion",
       "metric_key": "demographic_parity_diff",
-      "actual_value": 0.024801587301587324,
+      "actual_value": 0.045634920634920695,
       "threshold": 0.092,
       "operator": "lt",
       "severity": "high",
@@ -110,8 +110,8 @@
           "0": 56,
           "1": 144
         },
-        "ci_low": 0.0018868615473005752,
-        "ci_high": 0.15593971793120331,
+        "ci_low": 0.0029678994298765267,
+        "ci_high": 0.1737752900666503,
         "ci_level": 0.95,
         "method": "bootstrap",
         "n_boot": 1000,
@@ -283,7 +283,7 @@
       "risk.opacity"
     ]
   },
-  "pipeline_lock_digest": "sha256:d3582e2e04056e568ec444542c7afb104f0be2983c6c054c71c58c243514a028",
+  "pipeline_lock_digest": "sha256:1439a871c783ef3514927966fb6a051ed4a93e3570c602052677d15f9694ccdf",
   "sections": {
     "classification": "Valid",
     "data_governance": "Valid",
@@ -455,7 +455,7 @@
   ],
   "bom": {
     "format_version": "cyclonedx-1.6",
-    "digest": "sha256:60b4e7dc0682ceebaf99aa794c6c80ca37c4e44cef5ec764b630304843e18eaa",
+    "digest": "sha256:ddc68fe539f72bf43b710e69cff87b7b5e8c3b2938dba1017af9da632f36cfec",
     "components": [
       {
         "name": "PyYAML",
