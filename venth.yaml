@@ -1,0 +1,234 @@
+apiVersion: venturalitica.ai/v1alpha1
+kind: AISystem
+
+# ── Plantilla de gobernanza FICCIONALIZADA del repo demo público `vldemo-loan-scoring`.
+# Deriva de crates/venth-cli/tests/resources/loan/venth.yaml. La medición es un pipeline DVC
+# REAL (featurize → evaluate) que entrena el dataset Statlog (German Credit) cargado vía
+# Croissant, mide la paridad demográfica SOBRE EL HELD-OUT (test, n=200) con el SDK venturalitica
+# y emite un ML-BOM CycloneDX; el flag `mitigate` (fairlearn DemographicParity) gobierna el
+# tratamiento del sesgo. M-11: la equidad del modelo se mide held-out, no in-sample. Con n=200 el
+# IC bootstrap cruza el umbral → el control queda INCONCLUSO (M-1): honesto, no «verde» fabricado.
+# OPSEC: la entidad DORA es ficticia (LEI inventado, "Example Loan Corp").
+
+# ── 1. Identidad y finalidad del sistema ─────────────────────────────────────
+system:
+  name: pilot-loan-scoring
+  intended_purpose: "Scoring crediticio automatizado para la aprobación de préstamos al consumo."
+  organization: Example Loan Corp
+  version: "1.0.0"
+  decisions: [loan_approval, loan_denial]
+  affected_persons: [solicitantes]
+  component_type: ai-model
+  # Mal uso razonablemente previsible (ISO 42001 6.1.4 / EU AI Act Art.9(2)(b)).
+  potential_misuses:
+    - id: mu.unfair-subgroups
+      description: "Aplicar el modelo a poblaciones infrarrepresentadas asumiendo equidad sin verificarla por grupo."
+      addressed_by: [risk.unfair-credit-exclusion]
+    - id: mu.proxy-discrimination
+      description: "Introducir variables proxy de atributos protegidos (CP, nombre) para sortear los controles de equidad."
+      addressed_by: [risk.unfair-credit-exclusion, risk.data-governance]
+    - id: mu.out-of-purpose
+      description: "Reutilizar el score para decisiones fuera del crédito al consumo (empleo, seguros, alquiler)."
+      addressed_by: []   # SIN ATENDER: control de despliegue/gobernanza, no de este programa técnico
+
+# ── 2. Naturaleza de la tarea ────────────────────────────────────────────────
+task:
+  modality: tabular
+  type: classification
+
+# ── 3. Marco regulatorio ─────────────────────────────────────────────────────
+# Scoring crediticio automatizado para aprobación de préstamos al consumo — alto riesgo
+# (EU AI Act Anexo III §5(b)). Operado por una ENTIDAD FINANCIERA → el modelo es un activo
+# TIC sujeto a DORA (Reg. UE 2022/2554), además del EU AI Act.
+context:
+  applicable_standards:
+    - eu/pren-18228@2026
+    - iso/23894@2023
+    - eu/ai-act@2024
+    - eu/dora@2022
+    - eu/pren-18283@2026
+    - eu/pren-18282@2026
+  # Entidad DORA reportante (Reg. UE 2022/2554 + ITS Reg. UE 2024/2956 Anexo I tabla B_01.01).
+  # FICTICIA — datos de demostración, no corresponden a ninguna entidad real.
+  dora:
+    entity:
+      lei: "999999FAKEBANK999"
+      legalName: "Example Loan Corp"
+      country: "ES"
+      entityType: "credit_institution"
+
+# ── 4. Datos y modelo ────────────────────────────────────────────────────────
+# Dataset REAL Statlog (German Credit) cargado FIRST-CLASS vía Croissant (§2). `artifacts.model`
+# declara el descriptor del modelo (el motor materializa la fase de medición y `venth run` mide
+# el control con su `risk_id` → habilita `venth reconstruct`).
+dataset: { croissant: data/german_credit.croissant.json }
+artifacts:
+  model: { kind: logreg, seed: 42 }
+
+# ── 5. Medición y reproducción ───────────────────────────────────────────────
+# Reproducer DVC REAL: el DAG `featurize → evaluate` entrena German Credit, mide con el SDK
+# venturalitica (vl.monitor/enforce) y emite metrics.json + un ML-BOM CycloneDX. El arco
+# rojo→verde lo gobierna `mitigate` en params.yaml (false→true), versionado en git como
+# tratamiento (ISO 23894 §6.5); bumpearlo marca la stage stale → `venth run` re-mide en V2.
+eval: { script: train.py }
+pipeline: { tool: dvc, metrics: metrics.json, params: params.yaml }
+oscal: { assessment_plan: shared_data/policies/assessment_plan.oscal.yaml }
+
+# ── 5b. Evaluación declarada por humano (F5) ─────────────────────────────────
+classification:
+  tier: high
+  basis:
+    - "EU AI Act Annex III §5(b) (evaluación de solvencia / credit scoring)"
+    - "Reg. UE 2022/2554 DORA Art.6 (riesgo TIC de la entidad financiera)"
+  rationale: |
+    Scoring crediticio automatizado para aprobación de préstamos al consumo
+    (demo público — el tratamiento fairlearn baja la disparidad medida, pero la
+    evidencia held-out es infrapotenciada → control de equidad INCONCLUSO).
+    Alto riesgo §5(b).
+
+    DISCLOSURE (demo ilustrativo): los tres demos de crédito — loan-scoring,
+    novacredit y consumer-credit — comparten el MISMO benchmark público German
+    Credit (UCI #144) y una medición de equidad común (paridad demográfica sobre
+    `gender`, seed 42, medida sobre el conjunto HELD-OUT). Ilustran TRAYECTORIAS DE
+    GOBERNANZA distintas (aquí: tratamiento del sesgo cuya evidencia held-out resulta
+    infrapotenciada), no son tres sistemas reales independientes ni tres mediciones
+    independientes. El número de equidad es compartido por diseño.
+
+# ── 6. Programa de riesgos (Art.9) ───────────────────────────────────────────
+risk:
+  appetite: { individual: MEDIUM, society: MEDIUM, organization: HIGH }
+  criteria: { scale: "5x5" }
+  overall_residual_criterion: HIGH   # prEN 18228 cl. 10: criterio del residual GLOBAL (≠ apetito por-riesgo)
+  review_interval: P6M   # revisión semestral (ISO 23894 §6.6)
+  risks:
+    # ── RSK — Exclusión crediticia injusta de minorías (el riesgo MEDIDO) ────────
+    - id: risk.unfair-credit-exclusion
+      title: "Unfair Credit Exclusion of Minorities"
+      domain: fairness
+      rationale: "El modelo puede excluir injustamente a grupos protegidos al heredar patrones históricos de discriminación (sexo, edad)."
+      impact: { individual: HIGH, society: HIGH, organization: HIGH }
+      likelihood: LIKELY
+      treat:
+        - method: REDUCE
+          action: "Acotar la paridad demográfica de la decisión por grupo protegido."
+          controls: [eu/ai-act@2024#art-15]
+          residual_likelihood: UNLIKELY   # 6.5 objetivo: UNLIKELY×HIGH = MEDIUM (dentro del apetito)
+          measures:
+            # CONTROL MEDIDO bloqueante (M-11): la paridad demográfica se mide sobre el HELD-OUT
+            # (test, n=200), no in-sample. El tratamiento fairlearn baja el punto medido, pero con
+            # n=200 el IC bootstrap 95% cruza el umbral → el motor marca el control INCONCLUSO /
+            # subpoderado (M-1): honesto, n=200 no DEMUESTRA equidad aunque el punto cumpla. El
+            # umbral 0.092 es una cota declarada (NO fijada al valor observado).
+            - id: unfair-credit-exclusion
+              metric: demographic_parity_diff
+              constraint: "< 0.092"
+              severity: high
+              enforcement: gate
+              lifecycle: [validation]
+              article: "15"
+              frameworks: [eu/dora@2022#art-6]
+              control_tier: protective
+              # M-23: una ÚNICA medición de paridad residual evidencia SOLO la EVALUACIÓN del riesgo
+              # de equidad, la VERIFICACIÓN de su control y el residual — NO la identificación, el
+              # análisis, la finalidad ni el programa de testing (fases previas/declarativas que un
+              # residual no demuestra). Citas recortadas (11→6) a lo que el control genuinamente prueba.
+              standard_clauses:
+                - "eu/pren-18228@2026#7"      # Risk evaluation (el residual de equidad se evalúa)
+                - "eu/pren-18228@2026#9.2"    # Implementation & verification of risk control
+                - "eu/pren-18228@2026#9.3"    # Residual risk evaluation
+                - "iso/23894@2023#6.4.4"      # Risk evaluation
+                - "iso/23894@2023#6.5"        # Risk treatment (verificación del tratamiento)
+                - "eu/pren-18283@2026#bias.residual_evaluation"
+              inputs: { prediction: prediction, dimension: gender }
+
+    # ── RSK — Datos envenenados por bucles de realimentación (Art.10) ────────────
+    - id: risk.data-governance
+      title: "Poisoned Data from Feedback Loops"
+      domain: data
+      rationale: "Las decisiones sesgadas realimentan el reentrenamiento (profecía autocumplida), degradando la calidad y representatividad del dato."
+      impact: { society: HIGH, organization: MEDIUM }
+      likelihood: POSSIBLE
+      treat:
+        - method: REDUCE
+          action: "Balance de clase y minimización del dato de entrenamiento."
+          controls: [eu/ai-act@2024#art-10]
+          measures:
+            # Declaración organizativa (no medida): gobernanza de datos atestiguada.
+            - id: oversight-data-governance
+              metric: oversight_data_governance_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "10"
+              standard_clauses: ["iso/iec-5259-2@2024#balance"]
+
+    # ── RSK — Decisiones automatizadas sin explicabilidad (residual con observaciones) ─
+    - id: risk.opacity
+      title: "Automated Decisions without Explainability"
+      domain: transparency
+      rationale: "Decisiones automatizadas sin exactitud mínima defendible comprometen la explicabilidad y el derecho a una decisión justa."
+      impact: { individual: HIGH }
+      likelihood: ALMOST_CERTAIN
+      treat:
+        - method: REDUCE
+          action: "Supervisión humana de la salida del modelo (Art.14)."
+          controls: [eu/ai-act@2024#art-13]
+          # SIN residual_likelihood: la opacidad NO se acota a un residual dentro del apetito por
+          # medio de control técnico → mantiene observaciones en el residual global (historia honesta).
+          measures:
+            - id: oversight-monitor-interpret
+              metric: oversight_monitor_interpret_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "14"
+              standard_clauses: ["eu/pren-18229-1@2026#human-oversight", "iso/42105@2026#guidance"]
+
+    # ── RSK — Provisiones transversales de supervisión humana (Art.14) ──────────
+    - id: risk.insufficient-human-oversight
+      title: "Provisiones transversales de supervisión humana"
+      domain: governance
+      rationale: "Sin un modo de supervisión declarado y un rol con competencia/autoridad, no se cumplen las provisiones Art.14 de supervisión humana."
+      impact: { individual: HIGH, organization: HIGH }
+      likelihood: POSSIBLE
+      treat:
+        - method: REDUCE
+          action: "Declarar el modo de supervisión (HITL/HOTL) y el rol asignado con competencia."
+          controls: [eu/ai-act@2024#art-14]
+          measures:
+            - id: oversight-mode
+              metric: oversight_mode_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "14"
+              standard_clauses: ["eu/pren-18229-1@2026#human-oversight", "iso/8200@2024#control-transfer"]
+
+    # ── RSK — Modelo frágil / sin garantías de robustez (Art.15) ────────────────
+    - id: risk.model-robustness-security
+      title: "Brittle Model without Robustness or Integrity Guarantees"
+      domain: safety
+      rationale: "Un modelo sin garantías de robustez ni integridad puede producir resultados erróneos bajo perturbación o manipulación, comprometiendo la seguridad del sistema."
+      impact: { individual: MEDIUM, organization: HIGH }
+      likelihood: POSSIBLE
+      treat:
+        - method: REDUCE
+          action: "Reproducibilidad determinista del artefacto (ISO 27001)."
+          controls: [eu/ai-act@2024#art-15]
+          measures:
+            - id: oversight-artifact-integrity
+              metric: oversight_artifact_integrity_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "15"
+              standard_clauses: ["iso/27001@2022#A.8"]
+  applicability: {}
