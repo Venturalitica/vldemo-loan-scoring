@@ -2,4 +2,4 @@
 # `seed` FIJO (determinismo del entrenamiento, Art.15). El arco rojo→verde lo gobierna
 # `mitigate`: demo-repos.ts lo bumpea false→true como TRATAMIENTO versionado en git (ISO 23894 §6.5).
 seed: 42
-mitigate: false
+mitigate: true
