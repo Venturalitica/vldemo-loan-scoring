@@ -1,0 +1,62 @@
+schema: '2.0'
+stages:
+  featurize:
+    cmd: .venv/bin/python featurize.py
+    deps:
+    - path: data/german_credit.croissant.json
+      hash: md5
+      md5: 92bdd2df729f73f2d8464e2788e22411
+      size: 10778
+    - path: data/german_credit.csv
+      hash: md5
+      md5: c9ba1d8a75da1bcd664606d6be761d2d
+      size: 87710
+    - path: featurize.py
+      hash: md5
+      md5: 6122ed07599137976baa36d66cae2263
+      size: 1492
+    outs:
+    - path: data/features.parquet
+      hash: md5
+      md5: c494293e8f3df208738881a37e003bc3
+      size: 25534
+  evaluate:
+    cmd: .venv/bin/python evaluate.py
+    deps:
+    - path: compliance_eval.py
+      hash: md5
+      md5: eaf99872c839c095ba79c25a770f300a
+      size: 4720
+    - path: data/features.parquet
+      hash: md5
+      md5: c494293e8f3df208738881a37e003bc3
+      size: 25534
+    - path: evaluate.py
+      hash: md5
+      md5: 324a6698809384b1389ba5d2cdb9b367
+      size: 431
+    - path: shared_data/policies/assessment_plan.oscal.yaml
+      hash: md5
+      md5: ceeb99be41e96d01e1d52c12c0e9d516
+      size: 2068
+    - path: train.py
+      hash: md5
+      md5: 319c013deed148c17b9848c53b344500
+      size: 3525
+    params:
+      params.yaml:
+        mitigate: false
+        seed: 42
+    outs:
+    - path: .venturalitica/bom.json
+      hash: md5
+      md5: 173af4bf8c610d8407ed177069934b92
+      size: 56608
+    - path: metrics.json
+      hash: md5
+      md5: 7e77d3711f272966f26e2b57bfee3e8a
+      size: 366
+    - path: model.pkl
+      hash: md5
+      md5: 04f0885ecf2eb552ac64e1a8c91e1893
+      size: 2767
