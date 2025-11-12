@@ -81,10 +81,10 @@
         "title": "Evaluation of overall residual risk"
       },
       {
-        "basis": "sin aprobación de dirección (estado del ciclo: draft/pending)",
+        "basis": "aprobación de dirección registrada (Sei-Approved-by: …)",
         "clause_id": "11",
         "cycle_phase": "review",
-        "decision": "gap",
+        "decision": "covered",
         "measures": [],
         "title": "Risk management review"
       },

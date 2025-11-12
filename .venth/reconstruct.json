@@ -68,9 +68,18 @@
         }
       }
     ],
-    "approval": null,
+    "approval": {
+      "approver": "Quality Demo <quality@example-loan-corp.demo>",
+      "sha": "9b4f401cedd7b27488556ef47d86fa88cb129f2e",
+      "date": "2025-11-12T07:59:08Z",
+      "stale": false
+    },
     "lifecycle": {
-      "state": "draft"
+      "state": "approved",
+      "by": "Quality Demo <quality@example-loan-corp.demo>",
+      "sha": "9b4f401cedd7b27488556ef47d86fa88cb129f2e",
+      "date": "2025-11-12T07:59:08Z",
+      "stale": false
     }
   }
 }
